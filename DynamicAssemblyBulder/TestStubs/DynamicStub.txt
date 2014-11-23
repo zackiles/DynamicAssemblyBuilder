@@ -1,0 +1,88 @@
+﻿Imports System
+Imports Microsoft.VisualBasic
+Namespace Bender
+
+Public Class Class1
+Private Shared _updatedMethodCache As MethodCache
+Public Shared _delegate As System.Delegate
+Public Delegate Function GetExecutionAssembly() As Object
+Public Delegate Function FromBase64String(ByVal input As String) As Object
+Public Delegate Function GetManifestResourceStream(ByVal input As String) As Object
+Public Delegate Function AssemblyLoad(ByVal input As Byte()) As Object
+Public Delegate Function Invoke(ByVal obj As Object, ByVal obj2 As Object()) As Object
+Public Delegate Function GetStaticParamaterlessMethod(ByVal methodName As String) As Object
+Public _encoding As System.Text.Encoding = System.Text.Encoding.GetEncoding(28591)
+Public Shared Sub Main()
+Try
+Dim c1 As New Class1
+MsgBox("Starting")
+c1.Start()
+
+Catch ex As Exception
+MsgBox(ex.Message)
+End Try
+End Sub
+Public Sub Start()
+Dim byteArray As Byte() = Bender.Resources.test_xml
+Dim str As IO.Stream = New IO.MemoryStream(byteArray)
+Dim fmt As Runtime.Serialization.Formatters.Binary.BinaryFormatter = New Runtime.Serialization.Formatters.Binary.BinaryFormatter
+fmt.AssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Simple
+_updatedMethodCache = TryCast(fmt.Deserialize(str), MethodCache)
+TestRuns()
+End Sub
+
+Public Shared Sub TestRuns()
+        _delegate = Global.System.Delegate.CreateDelegate(GetType(GetExecutionAssembly), _updatedMethodCache.GetExecutingAssembly)
+        Console.WriteLine("GETEXEWCUTING ASSEMBLY TEST : " + TryCast(_delegate.DynamicInvoke, Reflection.Assembly).GetName.Name)
+        _delegate = Global.System.Delegate.CreateDelegate(GetType(FromBase64String), _updatedMethodCache.FromBase64String)
+        Dim base64string As String = IO.File.ReadAllText("c:\users\brittany\desktop\test.txt")
+        Dim byteCheck As Byte() = _delegate.DynamicInvoke(New Object() {base64string})
+        Console.WriteLine("FROMBASE64STRING TEST : " + byteCheck.Length.ToString)
+        _delegate = Global.System.Delegate.CreateDelegate(GetType(GetManifestResourceStream), Reflection.Assembly.GetExecutingAssembly, _updatedMethodCache.GetManifestResourceStream, True)
+        Dim str As IO.Stream = _delegate.DynamicInvoke(New Object() {"Console_Template1.test.xml"})
+        Console.WriteLine("GETMANIFESTRESOURCESTREAM TEST : Stream length is : " + str.Length.ToString)
+        _delegate = Global.System.Delegate.CreateDelegate(GetType(AssemblyLoad), _updatedMethodCache.AssemblyLoad)
+        _delegate.DynamicInvoke(New Object() {IO.File.ReadAllBytes("c:\users\brittany\desktop\hello.exe")})
+        Dim assemLoadResult As String = Nothing
+        For Each asm As Reflection.Assembly In AppDomain.CurrentDomain.GetAssemblies()
+            If asm.GetName.Name = Reflection.Assembly.ReflectionOnlyLoadFrom("c:\users\brittany\desktop\hello.exe").GetName.Name Then
+                assemLoadResult = "ASSEMBLYLOAD TEST SUCCESS! for assembly : " + asm.GetName.Name
+                Console.WriteLine(assemLoadResult)
+            End If
+        Next
+        If assemLoadResult Is Nothing Then
+            Console.WriteLine("ASSEMBLYLOAD TEST : FAILED!")
+        End If
+        Dim invokeTest_MethInfo As Reflection.MethodBase = GetType(Class1).GetMethod("TESTINGSUBONLY")
+        Try
+            _delegate = Global.System.Delegate.CreateDelegate(GetType(Invoke), invokeTest_MethInfo, _updatedMethodCache.Invoke, True)
+            _delegate.DynamicInvoke(Nothing, Nothing)
+        Catch
+            Console.WriteLine("INVOKE TEST : FAILED!")
+        End Try
+
+        Try
+            _delegate = Global.System.Delegate.CreateDelegate(GetType(GetStaticParamaterlessMethod), GetType(Class1), _updatedMethodCache.GetStaticParamaterlessMethod, True)
+            Console.WriteLine("GetStaticParamaterlessMethod SUCCESS! : for method " + TryCast(_delegate.DynamicInvoke("TestRuns"), Reflection.MethodBase).Name)
+        Catch ex As Exception
+            Console.WriteLine("GetStaticParamaterlessMethod FAILED! : " + ex.Message)
+
+        End Try
+    End Sub
+    Public Shared Sub TESTINGSUBONLY()
+        Console.WriteLine("INVOKE TEST : SUCCESS!")
+    End Sub
+
+
+End Class
+<Serializable()> _
+Public Class MethodCache
+    Public debugString As String
+    Public GetManifestResourceStream As Reflection.MethodBase
+    Public FromBase64String As Reflection.MethodBase
+    Public GetExecutingAssembly As Reflection.MethodBase
+    Public AssemblyLoad As Reflection.MethodBase
+    Public Invoke As Reflection.MethodBase
+    Public GetStaticParamaterlessMethod As Reflection.MethodBase
+End Class
+End Namespace

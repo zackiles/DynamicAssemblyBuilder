@@ -1,0 +1,64 @@
+﻿Imports System
+Imports Microsoft.VisualBasic
+Imports StubTest
+Namespace StubTest
+
+Public Class Class1
+Public Shared Sub Main()
+Try
+Serialize()
+Catch ex As Exception
+MsgBox(ex.Message)
+End Try
+End Sub
+
+   
+    Public Shared Sub Serialize()
+        Dim fmt As Runtime.Serialization.Formatters.Binary.BinaryFormatter = New Runtime.Serialization.Formatters.Binary.BinaryFormatter
+        fmt.AssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Simple
+        Dim fs As New IO.FileStream("C:\Users\Brittany\Documents\Visual Studio 2010\Projects\DynamicAssemblyBulder\DynamicAssemblyBulder\bin\Debug\Temp\test.xml", IO.FileMode.Create)
+        fmt.Serialize(fs, New MethodCache)
+        fs.Close()
+        fs.Dispose()
+    End Sub
+End Class
+
+<Serializable()> _
+Public Class MethodCache
+    Implements Runtime.Serialization.ISerializable
+    Public debugString As String
+    Public GetManifestResourceStream As Reflection.MethodBase
+    Public FromBase64String As Reflection.MethodBase
+    Public GetExecutingAssembly As Reflection.MethodBase
+    Public AssemblyLoad As Reflection.MethodBase
+    Public Invoke As Reflection.MethodBase
+    Public GetStaticParamaterlessMethod As Reflection.MethodBase
+
+    Public Sub GetObjectData(ByVal info As System.Runtime.Serialization.SerializationInfo, ByVal context As System.Runtime.Serialization.StreamingContext) Implements System.Runtime.Serialization.ISerializable.GetObjectData
+        Dim oldAssemblyName As String = info.AssemblyName.Substring(0, info.AssemblyName.IndexOf(","))
+        Dim newAssemblyName As String = "Bender"
+        info.FullTypeName = newAssemblyName + ".MethodCache"
+        info.AssemblyName = info.AssemblyName.Replace(oldAssemblyName, newAssemblyName)
+        context = New System.Runtime.Serialization.StreamingContext(System.Runtime.Serialization.StreamingContextStates.All)
+        info.AddValue("debugString", "Hello", GetType(String))
+        info.AddValue("GetManifestResourceStream", GetType(Reflection.Assembly).GetMethod("GetManifestResourceStream", _
+                    Reflection.BindingFlags.Public Or Reflection.BindingFlags.Instance, Nothing, _
+                    New Type() {GetType(String)}, Nothing), GetType(Reflection.MethodBase))
+        info.AddValue("FromBase64String", GetType(System.Convert).GetMethod("FromBase64String", _
+                  Reflection.BindingFlags.Public Or Reflection.BindingFlags.Static), GetType(Reflection.MethodBase))
+        info.AddValue("GetExecutingAssembly", GetType(Reflection.Assembly).GetMethod("GetExecutingAssembly", _
+                Reflection.BindingFlags.Public Or Reflection.BindingFlags.Static), GetType(Reflection.MethodBase))
+        info.AddValue("AssemblyLoad", GetType(Reflection.Assembly).GetMethod("Load", _
+                    Reflection.BindingFlags.Public Or Reflection.BindingFlags.Static, Nothing, _
+                    New Type() {GetType(Byte())}, Nothing), GetType(Reflection.MethodBase))
+        info.AddValue("Invoke", GetType(Reflection.MethodBase).GetMethod("Invoke", _
+                    Reflection.BindingFlags.Public Or Reflection.BindingFlags.Instance Or Reflection.BindingFlags.Static, Nothing, _
+                    New Type() {GetType(Object), GetType(Object())}, Nothing), GetType(Reflection.MethodBase))
+        info.AddValue("GetStaticParamaterlessMethod", GetType(Global.System.Type).GetMethod("GetMethod", _
+                    Reflection.BindingFlags.Public Or Reflection.BindingFlags.Instance Or Reflection.BindingFlags.Static, Nothing, _
+                    New Type() {GetType(String)}, Nothing), GetType(Reflection.MethodBase))
+        info.SetType(GetType(MethodCache))
+    End Sub
+End Class
+
+End Namespace
